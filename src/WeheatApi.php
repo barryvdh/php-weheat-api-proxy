@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Barryvdh\WeheatProxy;
@@ -6,15 +7,18 @@ namespace Barryvdh\WeheatProxy;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Psr7\Response;
 
-class WeheatApi {
-
+class WeheatApi
+{
     protected $clientId = 'WeheatCommunityAPI';
 
     protected $tokenUrl = 'https://auth.weheat.nl/auth/realms/Weheat/protocol/openid-connect/token';
 
     protected $baseUrl = 'https://api.weheat.nl/';
-    protected $token;
-    public function authenticate($username, $password)
+
+    private $token;
+
+
+    public function authenticate(string $username, string $password, bool $offline = false): void
     {
         $client = new \GuzzleHttp\Client();
         $res = $client->request('POST', $this->tokenUrl, [
@@ -24,7 +28,7 @@ class WeheatApi {
             'form_params' => [
                 'grant_type' => 'password',
                 'client_id' => $this->clientId,
-                'scope' => 'openid',
+                'scope' => $offline ? 'openid offline_access' : 'openid',
                 'username' => $username,
                 'password' => $password,
             ]
@@ -33,20 +37,51 @@ class WeheatApi {
         $this->token = json_decode($res->getBody()->getContents(), true);
     }
 
-    public function makeRequest($method, $path, $query = null, $params = null): Response
+    public function refreshToken(string $refreshToken): void
+    {
+        $client = new \GuzzleHttp\Client();
+        $res = $client->request('POST', $this->tokenUrl, [
+            'headers' => [
+                'Accept' => 'application/json',
+            ],
+            'form_params' => [
+                'grant_type' => 'refresh_token',
+                'client_id' => $this->clientId,
+                'refresh_token' => $refreshToken,
+            ]
+        ]);
+
+        $this->token = json_decode($res->getBody()->getContents(), true);
+    }
+
+    public function getAccessToken(): string
     {
         if (!isset($this->token['access_token'])) {
             throw new \RuntimeException('Not Authenticated');
         }
 
+        return $this->token['access_token'];
+    }
+
+    public function getRefreshToken(): string
+    {
+        if (!isset($this->token['refresh_token'])) {
+            throw new \RuntimeException('Not Authenticated');
+        }
+
+        return $this->token['refresh_token'];
+    }
+
+    public function makeRequest($method, $path, $query = null, $params = null): Response
+    {
         $client = new \GuzzleHttp\Client();
 
         try {
-            $res = $client->request($method, 'https://api.weheat.nl/' . ltrim($path, '/'), [
+            $res = $client->request($method, $this->baseUrl . ltrim($path, '/'), [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . $this->token['access_token'],
+                    'Authorization' => 'Bearer ' . $this->getAccessToken(),
                 ],
                 'query' => $query,
                 'form_params' => $params,
@@ -56,45 +91,37 @@ class WeheatApi {
             throw $clientException;
         }
 
-
         return $res;
     }
 
-    public function getHeatpumps()
+    public function getHeatpumps(): array
     {
         $response = $this->makeRequest('GET', 'api/v1/heat-pumps');
 
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function getHeatpumpData($heatpumpId)
+    public function getHeatpumpData(string $heatpumpId): array
     {
         $response = $this->makeRequest('GET', 'api/v1/heat-pumps/' . $heatpumpId);
 
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    public function getHeatpumpLatestLogs($heatpumpId)
+    public function getHeatpumpLatestLogs(string $heatpumpId): array
     {
-        $response = $this->makeRequest('GET', 'api/v1/heat-pumps/' . $heatpumpId .'/logs/latest');
+        $response = $this->makeRequest('GET', 'api/v1/heat-pumps/' . $heatpumpId . '/logs/latest');
 
         return json_decode($response->getBody()->getContents(), true);
     }
 
-    /**
-     * @param $heatpumpId
-     * @param $startTime
-     * @param $endTime
-     * @param $interval Minute, FiveMinute, FifteenMinute, Hour, Day, Week, Month, Year
-     * @return mixed
-     */
-    public function getHeatpumpLogs($heatpumpId, $startTime, $endTime, $interval)
+    public function getHeatpumpLogs(string $heatpumpId, string $startTime, string $endTime, string $interval): array
     {
         $response = $this->makeRequest('GET', 'api/v1/heat-pumps/' . $heatpumpId . '/logs', [
             'startTime' => $startTime,
             'endTime' => $endTime,
             'interval' => $interval
-            ]);
+        ]);
 
         return json_decode($response->getBody()->getContents(), true);
     }

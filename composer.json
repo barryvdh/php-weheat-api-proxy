@@ -1,7 +1,8 @@
 {
     "name": "barry/weheat-proxy",
     "require": {
-        "guzzlehttp/guzzle": "^7.8"
+        "guzzlehttp/guzzle": "^7.8",
+        "league/climate": "^3.8"
     },
     "autoload": {
         "psr-4": {
