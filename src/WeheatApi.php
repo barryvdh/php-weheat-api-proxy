@@ -17,7 +17,6 @@ class WeheatApi
 
     private $token;
 
-
     public function authenticate(string $username, string $password, bool $offline = false): void
     {
         $client = new \GuzzleHttp\Client();
@@ -52,6 +51,24 @@ class WeheatApi
         ]);
 
         $this->token = json_decode($res->getBody()->getContents(), true);
+    }
+
+    public function getToken(): array
+    {
+        if (!isset($this->token['access_token'])) {
+            throw new \RuntimeException('Not Authenticated');
+        }
+
+        return $this->token;
+    }
+
+    public function setToken(array $token): void
+    {
+        if (!isset($token['access_token'])) {
+            throw new \InvalidArgumentException('Invalid token');
+        }
+
+        $this->token = $token;
     }
 
     public function getAccessToken(): string
