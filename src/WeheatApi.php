@@ -93,20 +93,15 @@ class WeheatApi
     {
         $client = new \GuzzleHttp\Client();
 
-        try {
-            $res = $client->request($method, $this->baseUrl . ltrim($path, '/'), [
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . $this->getAccessToken(),
-                ],
-                'query' => $query,
-                'form_params' => $params,
-            ]);
-        } catch (ClientException $clientException) {
-            dump($clientException->getResponse()->getBody()->getContents());
-            throw $clientException;
-        }
+        $res = $client->request($method, $this->baseUrl . ltrim($path, '/'), [
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $this->getAccessToken(),
+            ],
+            'query' => $query,
+            'form_params' => $params,
+        ]);
 
         return $res;
     }
