@@ -24,6 +24,9 @@ GET http://example.com/index.php/api/v1/heat-pumps
 ```
 
 Your can provide your username/password as Basic Auth, or just the refresh_token as username in basic auth.
+You can also set the X-Refresh-Token header.
+
+
 
 ### Examples
 

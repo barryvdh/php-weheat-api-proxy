@@ -6,7 +6,8 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-if (!isset($_SERVER['PHP_AUTH_USER'])) {
+if (!isset($_SERVER['PHP_AUTH_USER']) && !isset($_SERVER['HTTP_X_REFRESH_TOKEN'])) {
+    print_r($_SERVER);
     header('WWW-Authenticate: Basic realm="WeHeat Credentials"');
     header('HTTP/1.0 401 Unauthorized');
     echo 'Please login using your WeHeat credentials';
@@ -16,8 +17,13 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
 $cache = new FilesystemAdapter();
 $api = new WeheatApi();
 
-$username = $_SERVER['PHP_AUTH_USER'];
-$password = $_SERVER['PHP_AUTH_PW'];
+if (isset($_SERVER['HTTP_X_REFRESH_TOKEN'])) {
+    $username = $_SERVER['HTTP_X_REFRESH_TOKEN'];
+    $password = '';
+} else {
+    $username = $_SERVER['PHP_AUTH_USER'];
+    $password = $_SERVER['PHP_AUTH_PW'];
+}
 
 $cacheKey = 'token.'.sha1($username.$password);
 
