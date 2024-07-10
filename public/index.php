@@ -7,7 +7,6 @@ use Symfony\Contracts\Cache\ItemInterface;
 require __DIR__ . '/../vendor/autoload.php';
 
 if (!isset($_SERVER['PHP_AUTH_USER']) && !isset($_SERVER['HTTP_X_REFRESH_TOKEN'])) {
-    print_r($_SERVER);
     header('WWW-Authenticate: Basic realm="WeHeat Credentials"');
     header('HTTP/1.0 401 Unauthorized');
     echo 'Please login using your WeHeat credentials';
